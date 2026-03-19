@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoltLibre — Unit Economics & Break-Even Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0d12;
+    --surface: #111520;
+    --surface2: #161c2d;
+    --border: #1e2740;
+    --accent: #00e5a0;
+    --accent2: #3b82f6;
+    --accent3: #f59e0b;
+    --danger: #ef4444;
+    --text: #e8edf5;
+    --muted: #6b7fa3;
+    --grid: rgba(255,255,255,0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 60px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  h1 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 600px;
+  }
+
+  .meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .meta-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .meta-item strong {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  /* Section headings */
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+
+  h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 11px;
+  }
+
+  .section {
+    margin-bottom: 64px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .card-grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .card-grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card-grid-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card:hover::before { opacity: 1; }
+
+  .card-accent { border-color: rgba(0,229,160,0.2); background: rgba(0,229,160,0.04); }
+  .card-blue { border-color: rgba(59,130,246,0.2); background: rgba(59,130,246,0.04); }
+  .card-amber { border-color: rgba(245,158,11,0.2); background: rgba(245,158,11,0.04); }
+  .card-danger { border-color: rgba(239,68,68,0.2); background: rgba(239,68,68,0.04); }
+
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .card-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .card-value.accent { color: var(--accent); }
+  .card-value.blue { color: var(--accent2); }
+  .card-value.amber { color: var(--accent3); }
+  .card-value.danger { color: var(--danger); }
+
+  .card-sub {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: var(--surface2);
+    padding: 12px 16px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-top: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: var(--surface2); }
+
+  td {
+    padding: 12px 16px;
+    vertical-align: top;
+  }
+
+  td.mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  td.right { text-align: right; }
+  td.bold { font-weight: 600; }
+  td.accent { color: var(--accent); }
+  td.amber { color: var(--accent3); }
+  td.danger { color: var(--danger); }
+  td.muted { color: var(--muted); }
+
+  tr.total-row {
+    background: var(--surface2);
+    font-weight: 600;
+  }
+
+  tr.total-row td { border-top: 2px solid var(--border); }
+
+  /* Chart containers */
+  .chart-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-top: 24px;
+  }
+
+  .chart-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .chart-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  canvas { max-height: 320px; }
+
+  /* Scenario tabs */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .tab:hover { border-color: var(--accent); color: var(--text); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+
+  /* Alert boxes */
+  .alert {
+    padding: 16px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-top: 16px;
+  }
+
+  .alert-accent {
+    background: rgba(0,229,160,0.06);
+    border: 1px solid rgba(0,229,160,0.2);
+    color: rgba(200,255,235,0.9);
+  }
+
+  .alert-amber {
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.2);
+    color: rgba(255,235,180,0.9);
+  }
+
+  .alert-danger {
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.2);
+    color: rgba(255,200,200,0.9);
+  }
+
+  .alert strong { display: block; margin-bottom: 4px; font-family: 'Syne', sans-serif; }
+
+  /* Matrix table highlight */
+  td.green-light { background: rgba(0,229,160,0.08); color: var(--accent); font-weight: 600; }
+  td.amber-light { background: rgba(245,158,11,0.08); color: var(--accent3); }
+  td.red-light { background: rgba(239,68,68,0.08); color: var(--danger); }
+
+  /* Inflection callout */
+  .inflection {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 20px;
+    align-items: start;
+    background: var(--surface);
+    border: 1px solid rgba(0,229,160,0.25);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 20px;
+  }
+
+  .inflection-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    min-width: 120px;
+  }
+
+  .inflection-num span {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1.8;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+
+  .badge-green { background: rgba(0,229,160,0.15); color: var(--accent); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent2); }
+  .badge-amber { background: rgba(245,158,11,0.15); color: var(--accent3); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--danger); }
+
+  /* Assumptions box */
+  .assumptions {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .assumption-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+  }
+
+  .assumption-row:last-child { border-bottom: none; }
+
+  .assumption-label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .assumption-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  /* Scenario panel */
+  .scenario-panel { display: none; }
+  .scenario-panel.active { display: block; }
+
+  @media (max-width: 600px) {
+    .card-value { font-size: 22px; }
+    .inflection-num { font-size: 32px; min-width: 90px; }
+    h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ══════════════════════════════ HEADER ══════════════════════════════ -->
+  <header class="header">
+    <div class="eyebrow">Confidential Internal Document · March 2026</div>
+    <h1>VoltLibre <span>Unit Economics</span><br>& Break-Even Model</h1>
+    <p class="subtitle">A comprehensive financial analysis for a Spanish EdTech/Energy-Fintech platform operating as a Wyoming LLC. All figures are in EUR unless stated otherwise.</p>
+   
+  </header>
+
+  <!-- ══════════════════════════════ SECTION 1: CORE ASSUMPTIONS ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">01 / CORE ASSUMPTIONS</div>
+        <h2>Model Inputs & Business Parameters</h2>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-2" style="margin-bottom:20px;">
+      <div class="assumptions">
+        <h3>Revenue Assumptions</h3>
+        <div class="assumption-row">
+          <span class="assumption-label">Pro Tier Monthly Price</span>
+          <span class="assumption-value">€300 / user / month</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Academy Tier Price</span>
+          <span class="assumption-value">€0 / month</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">VoltLibre Commission Split (Academy)</span>
+          <span class="assumption-value">30% of gross CPA</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Avg. CPA per closed deal (blended)</span>
+          <span class="assumption-value">€130 gross to VoltLibre</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Academy: avg. deals per agent / month</span>
+          <span class="assumption-value">1.5 deals</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">VoltLibre revenue per Academy user/mo</span>
+          <span class="assumption-value">€58.50 (avg)</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Closing rate (comparisons → signed)</span>
+          <span class="assumption-value">~5%</span>
+        </div>
+      </div>
+
+      <div class="assumptions">
+        <h3>CPA Commission Breakdown (by Tariff)</h3>
+        <div class="assumption-row">
+          <span class="assumption-label">2.0TD residential (small business)</span>
+          <span class="assumption-value">€50 — €80 gross CPA</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">3.0TD commercial / SME</span>
+          <span class="assumption-value">€150 — €250 gross CPA</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">6.0TD / 6.1TD industrial</span>
+          <span class="assumption-value">€300+ gross CPA</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Blended CPA (used in model)</span>
+          <span class="assumption-value">€130 gross</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Academy agent receives (70%)</span>
+          <span class="assumption-value">€91 per deal</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">VoltLibre keeps (30%)</span>
+          <span class="assumption-value">€39 per deal</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Provider payment terms</span>
+          <span class="assumption-value">30 – 90 days</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-amber">
+      <strong>⚠ Model Assumptions to Monitor</strong>
+      The blended CPA of €130 assumes a realistic mix of 70% residential (2.0TD) deals and 30% commercial (3.0TD+). If Academy users primarily close residential deals, VoltLibre's 30% cut averages nearer to €19.50/deal, reducing Academy revenue contribution sharply. The model uses €39/deal as the conservative central estimate. Academy deal volume of 1.5 closed deals/agent/month is based on a 5% closing rate with approximately 2 comparisons/day → ~60 comparisons/month → 3 projected closes, discounted for cancellations and provider-side delays.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 2: FIXED COSTS ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">02 / FIXED MONTHLY COSTS</div>
+        <h2>Base Operating Burn (Keep-the-Lights-On)</h2>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Cost Category</th>
+            <th>Item</th>
+            <th>Frequency</th>
+            <th>Annual (€)</th>
+            <th>Monthly (€)</th>
+            <th>Source / Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- LEGAL / COMPLIANCE -->
+          <tr>
+            <td class="bold" rowspan="3">🇺🇸 USA LLC</td>
+            <td>Wyoming Annual Report + License Tax</td>
+            <td>Annual</td>
+            <td class="mono right">62</td>
+            <td class="mono right">5.17</td>
+            <td class="muted">WY SOS: $60 + $2 online fee</td>
+          </tr>
+          <tr>
+            <td>Registered Agent (Northwest / equiv.)</td>
+            <td>Annual</td>
+            <td class="mono right">116</td>
+            <td class="mono right">9.67</td>
+            <td class="muted">~$125/yr market rate</td>
+          </tr>
+          <tr>
+            <td>US CPA — Form 5472 + Pro-Forma 1120</td>
+            <td>Annual</td>
+            <td class="mono right">650</td>
+            <td class="mono right">54.17</td>
+            <td class="muted">~$700; required for foreign-owned LLC. $25,000 IRS penalty if missed.</td>
+          </tr>
+          <!-- SPAIN -->
+          <tr>
+            <td class="bold" rowspan="2">🇪🇸 Spain Ops</td>
+            <td>Gestoría (IVA, IRPF, agent payouts, quarterly filings)</td>
+            <td>Monthly</td>
+            <td class="mono right">1,560</td>
+            <td class="mono right">130</td>
+            <td class="muted">€130/mo — online gestoría with multi-agent complexity (Fiscalisy/equiv.)</td>
+          </tr>
+          <tr>
+            <td>Spanish legal (T&Cs, Independent Contractor Agreements) — amortized</td>
+            <td>One-time / year 1</td>
+            <td class="mono right">250</td>
+            <td class="mono right">20.83</td>
+            <td class="muted">~€3,000 one-time legal; amortized over 12 months in Y1, then ~€250/yr renewal review</td>
+          </tr>
+          <!-- TECH SUBSCRIPTIONS -->
+          <tr>
+            <td class="bold" rowspan="5">💻 Software</td>
+            <td>Google Workspace (professional email + Drive)</td>
+            <td>Monthly</td>
+            <td class="mono right">144</td>
+            <td class="mono right">12</td>
+            <td class="muted">Business Starter €6/user x 2 users</td>
+          </tr>
+          <tr>
+            <td>Domain name (voltlibre.com or .es)</td>
+            <td>Annual</td>
+            <td class="mono right">18</td>
+            <td class="mono right">1.50</td>
+            <td class="muted">~€18/yr typical</td>
+          </tr>
+          <tr>
+            <td>Accounting software (Wave free / QuickBooks Simple Start)</td>
+            <td>Monthly</td>
+            <td class="mono right">180</td>
+            <td class="mono right">15</td>
+            <td class="muted">QuickBooks Simple Start €15/mo; Wave is free (used here as conservative)</td>
+          </tr>
+          <tr>
+            <td>Password manager + team tools (1Password Teams)</td>
+            <td>Monthly</td>
+            <td class="mono right">114</td>
+            <td class="mono right">9.50</td>
+            <td class="muted">~$10/mo</td>
+          </tr>
+          <tr>
+            <td>Stripe (subscription billing — monthly fixed charge)</td>
+            <td>Monthly</td>
+            <td class="mono right">0</td>
+            <td class="mono right">0</td>
+            <td class="muted">No fixed fee; pay-per-transaction only (see variable costs)</td>
+          </tr>
+          <!-- INFRASTRUCTURE (FREE TIER) -->
+          <tr>
+            <td class="bold" rowspan="2">☁️ Infrastructure<br><span class="badge badge-green">FREE TIER</span></td>
+            <td>Vercel Hobby (free tier — personal projects / MVP)</td>
+            <td>—</td>
+            <td class="mono right">0</td>
+            <td class="mono right">0</td>
+            <td class="muted">Free up to ~50K page views/mo. No production SLA.</td>
+          </tr>
+          <tr>
+            <td>Supabase Free Tier (2 projects, 50K MAUs, 500MB DB)</td>
+            <td>—</td>
+            <td class="mono right">0</td>
+            <td class="mono right">0</td>
+            <td class="muted">Adequate to ~200 active users. Projects pause on inactivity — risk at 0-user months.</td>
+          </tr>
+          <!-- TOTAL -->
+          <tr class="total-row">
+            <td colspan="3" class="bold">TOTAL MONTHLY FIXED BURN (Year 1 with legal amortization)</td>
+            <td class="mono right bold accent">3,094</td>
+            <td class="mono right bold accent">257.83</td>
+            <td class="muted">Recurring from Month 2+</td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="3" class="bold">TOTAL MONTHLY FIXED BURN (Year 2+ steady state)</td>
+            <td class="mono right bold" style="color:var(--accent2)">2,844</td>
+            <td class="mono right bold" style="color:var(--accent2)">237</td>
+            <td class="muted">Legal one-time removed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-accent" style="margin-top:16px;">
+      <strong>📌 Fixed Cost Reality Check</strong>
+      The single biggest fixed cost is the Spanish gestoría at €130/month. This is non-negotiable for operating legally with Spanish independent contractors — every Academy agent payout requires proper IRPF/IVA documentation. The US CPA at €54/month amortized is also mandatory; missing Form 5472 carries a $25,000 IRS penalty per violation. Together these two compliance items represent 71% of all fixed costs. Keep them.
+    </div>
+
+    <div class="card-grid card-grid-4" style="margin-top:20px;">
+      <div class="card">
+        <div class="card-label">Monthly Fixed Burn</div>
+        <div class="card-value accent">€237</div>
+        <div class="card-sub">Steady state (Year 2+)</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Y1 Monthly Fixed Burn</div>
+        <div class="card-value amber">€258</div>
+        <div class="card-sub">Inc. legal setup amortization</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Annual Fixed Burn</div>
+        <div class="card-value" style="color:var(--accent2);">€2,844</div>
+        <div class="card-sub">Year 2+ (excluding legal setup)</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Biggest Cost Item</div>
+        <div class="card-value" style="font-size:18px;">Gestoría</div>
+        <div class="card-sub">€130/mo — 54.8% of fixed burn</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 3: VARIABLE COSTS ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">03 / VARIABLE COSTS</div>
+        <h2>Per-User Technical Infrastructure</h2>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); margin-bottom:20px; font-size:13px;">Costs that scale with user activity. The platform runs on free tiers until volume forces upgrades. Each "comparison" generates ~50–60 DB queries. Users average 1–3 comparisons per active day.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Free Tier Limit</th>
+            <th>Paid Trigger</th>
+            <th>Paid Cost</th>
+            <th>Per-User Estimate / mo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bold">Supabase — Database</td>
+            <td>500 MB storage, 50K MAUs, unlimited API requests</td>
+            <td>&gt;50K MAU or &gt;500MB DB or need uptime SLA</td>
+            <td class="mono">$25/mo (Pro) — includes 8GB DB, 100K MAU</td>
+            <td class="mono right">$0.00025/MAU on Pro</td>
+          </tr>
+          <tr>
+            <td class="bold">Supabase — Storage</td>
+            <td>1 GB (contracts, compliance docs)</td>
+            <td>&gt;1GB (approx 200–400 PDF uploads)</td>
+            <td class="mono">$0.021/GB/mo overage</td>
+            <td class="mono right">~€0.02 per active user</td>
+          </tr>
+          <tr>
+            <td class="bold">Supabase — Egress</td>
+            <td>5 GB (free), 250 GB (Pro)</td>
+            <td>Rarely hit on B2B data app</td>
+            <td class="mono">$0.09/GB overage</td>
+            <td class="mono right">~€0.005/user</td>
+          </tr>
+          <tr>
+            <td class="bold">Vercel — Hosting</td>
+            <td>Hobby: 100GB bandwidth, 6h build/mo</td>
+            <td>Pro: $20/mo team seat — needed at ~50+ users for reliability</td>
+            <td class="mono">$20/mo Pro (1 seat). +$20/additional seat</td>
+            <td class="mono right">$0.40/user at 50 users; $0.02/user at 1000</td>
+          </tr>
+          <tr>
+            <td class="bold">Vercel — Bandwidth overage</td>
+            <td>1TB included on Pro</td>
+            <td>&gt;1TB (unlikely below 5,000 users)</td>
+            <td class="mono">$0.15/GB overage</td>
+            <td class="mono right">Negligible below 5K users</td>
+          </tr>
+          <tr>
+            <td class="bold">Stripe — Pro Subscription</td>
+            <td>—</td>
+            <td>Per transaction</td>
+            <td class="mono">1.5% + €0.25 (EU cards)</td>
+            <td class="mono right">€4.75 per €300 charge</td>
+          </tr>
+          <tr>
+            <td class="bold">Stripe — Academy (no charge)</td>
+            <td>—</td>
+            <td>N/A — no subscription fee</td>
+            <td class="mono">€0</td>
+            <td class="mono right">€0</td>
+          </tr>
+          <tr>
+            <td class="bold">Email (transactional)</td>
+            <td>Resend free: 3,000/mo</td>
+            <td>&gt;3,000 emails/mo ≈ 1,000+ users</td>
+            <td class="mono">$20/mo (Resend Pro)</td>
+            <td class="mono right">~€0.007/email</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <h3>Variable Cost Per User (Monthly Estimate by Scale)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Scale</th>
+            <th>Total Users</th>
+            <th>Supabase Tier</th>
+            <th>Vercel Tier</th>
+            <th>Stripe (per Pro user)</th>
+            <th>Email</th>
+            <th>Total Var. Cost/User</th>
+            <th>Total Var. Cost/Month</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bold">MVP Phase</td>
+            <td class="mono">0 – 50</td>
+            <td><span class="badge badge-green">FREE</span></td>
+            <td><span class="badge badge-green">HOBBY FREE</span></td>
+            <td class="mono">€4.75/Pro sub</td>
+            <td class="mono">€0</td>
+            <td class="mono right accent bold">~€0.10</td>
+            <td class="mono right">~€5 total + Stripe</td>
+          </tr>
+          <tr>
+            <td class="bold">Early Growth</td>
+            <td class="mono">50 – 200</td>
+            <td><span class="badge badge-green">FREE</span></td>
+            <td><span class="badge badge-blue">PRO $20</span></td>
+            <td class="mono">€4.75/Pro sub</td>
+            <td class="mono">€0</td>
+            <td class="mono right" style="color:var(--accent2)">~€0.40 – €0.60</td>
+            <td class="mono right">~€30 – €80</td>
+          </tr>
+          <tr>
+            <td class="bold">Growth</td>
+            <td class="mono">200 – 1,000</td>
+            <td><span class="badge badge-blue">PRO $25</span></td>
+            <td><span class="badge badge-blue">PRO $20</span></td>
+            <td class="mono">€4.75/Pro sub</td>
+            <td class="mono">$20 Resend</td>
+            <td class="mono right amber">~€0.07 – €0.25</td>
+            <td class="mono right">~€70 – €200</td>
+          </tr>
+          <tr>
+            <td class="bold">Scale</td>
+            <td class="mono">1,000 – 5,000</td>
+            <td><span class="badge badge-amber">PRO $25 + overages</span></td>
+            <td><span class="badge badge-blue">PRO $20</span></td>
+            <td class="mono">€4.75/Pro sub</td>
+            <td class="mono">$20 Resend</td>
+            <td class="mono right" style="color:var(--accent3)">~€0.05 – €0.15</td>
+            <td class="mono right">~€100 – €400</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-amber" style="margin-top:16px;">
+      <strong>⚡ Infrastructure Upgrade Triggers</strong>
+      <strong>Vercel Hobby → Pro ($20/mo):</strong> At ~50+ registered users in production. Hobby tier has no SLA and projects can be rate-limited. Trigger this upgrade immediately when the first paying Pro user signs up. Cost: $20/month flat (covers unlimited projects on one team).<br><br>
+      <strong>Supabase Free → Pro ($25/mo):</strong> At ~200 Monthly Active Users OR when DB size exceeds 400MB (roughly 5,000+ bill uploads with PDF storage). The free tier is adequate for the MVP and early growth phases. The Pro tier at $25/month is predictable and covers 100,000 MAUs, 8GB DB, and 100GB Storage — well beyond the needs of a 1,000-user platform.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 4: CONTRIBUTION MARGIN ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">04 / CONTRIBUTION MARGIN</div>
+        <h2>Revenue Minus Variable Costs per User Type</h2>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-2">
+      <div class="card card-accent">
+        <h3>PRO USER — Monthly Contribution</h3>
+        <div class="assumption-row">
+          <span class="assumption-label">Gross Revenue</span>
+          <span class="assumption-value accent">+€300.00</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Stripe fee (1.5% + €0.25 on €300)</span>
+          <span class="assumption-value danger">−€4.75</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Supabase compute (allocated)</span>
+          <span class="assumption-value danger">−€0.15</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Vercel bandwidth (allocated)</span>
+          <span class="assumption-value danger">−€0.10</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Email (transactional, allocated)</span>
+          <span class="assumption-value danger">−€0.20</span>
+        </div>
+        <div class="assumption-row" style="border-bottom:none; padding-top:12px;">
+          <span style="font-weight:600;">Net Contribution Margin</span>
+          <span style="font-family:'Syne',sans-serif; font-size:22px; font-weight:700; color:var(--accent);">€294.80</span>
+        </div>
+        <div class="card-sub" style="margin-top:8px;">CM Ratio: <strong>98.3%</strong> — extremely high-margin product</div>
+      </div>
+
+      <div class="card card-blue">
+        <h3>ACADEMY USER — Monthly Contribution</h3>
+        <div class="assumption-row">
+          <span class="assumption-label">VoltLibre's 30% of avg. 1.5 deals × €130</span>
+          <span class="assumption-value" style="color:var(--accent2)">+€58.50</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Conservative (1 deal × €39)</span>
+          <span class="assumption-value" style="color:var(--accent2)">+€39.00 (floor)</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Stripe fee (Academy earns, no charge)</span>
+          <span class="assumption-value">€0</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Supabase compute (allocated)</span>
+          <span class="assumption-value danger">−€0.15</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Vercel bandwidth (allocated)</span>
+          <span class="assumption-value danger">−€0.10</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Email (allocated)</span>
+          <span class="assumption-value danger">−€0.20</span>
+        </div>
+        <div class="assumption-row" style="border-bottom:none; padding-top:12px;">
+          <span style="font-weight:600;">Net CM (avg scenario)</span>
+          <span style="font-family:'Syne',sans-serif; font-size:22px; font-weight:700; color:var(--accent2);">€58.05</span>
+        </div>
+        <div class="card-sub" style="margin-top:8px;">CM Ratio: ~<strong>99.2%</strong> — variable costs near zero. Revenue entirely deal-volume dependent.</div>
+      </div>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">Monthly Contribution Margin — Pro vs. Academy</div>
+      <div class="chart-desc">Revenue net of all per-user variable costs. The gap illustrates why Pro users are 5× more predictable per head than Academy users.</div>
+      <canvas id="cmChart"></canvas>
+    </div>
+
+    <div class="alert alert-accent" style="margin-top:16px;">
+      <strong>Key Insight: Academy Revenue Is Highly Uncertain</strong>
+      An Academy user who closes 0 deals in a month contributes €0. An Academy user who closes a 6.0TD industrial deal generates €300+ for VoltLibre. The model uses 1.5 deals/month as the central estimate, but Academy revenue must be modeled with a wide distribution. The €58.05 average is a probability-weighted expectation, not a guaranteed monthly payment.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 5: BREAK-EVEN ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">05 / BREAK-EVEN ANALYSIS</div>
+        <h2>How Many Users to Cover Monthly Fixed Costs?</h2>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); margin-bottom:24px; font-size:13px;">Fixed monthly costs (steady state, Year 2+): <strong style="color:var(--text)">€237/month</strong>. This is what must be covered before any profit is made.</p>
+
+    <div class="card-grid card-grid-3" style="margin-bottom:24px;">
+      <div class="card card-accent">
+        <div class="card-label">Pro-Only Break-Even</div>
+        <div class="card-value accent">1</div>
+        <div class="card-sub">user required. A single Pro subscriber at €300/mo covers all fixed costs with €57.80 net left over. Month 1 profitability is achievable.</div>
+      </div>
+      <div class="card card-blue">
+        <div class="card-label">Academy-Only Break-Even</div>
+        <div class="card-value blue">5</div>
+        <div class="card-sub">active Academy users needed at 1.5 deals/month average (€58.05 CM each → 5 × €58.05 = €290 ≈ €237 needed). Floor is 7 users if deals average only 1/month.</div>
+      </div>
+      <div class="card card-amber">
+        <div class="card-label">Break-Even Revenue / Month</div>
+        <div class="card-value amber">€237</div>
+        <div class="card-sub">Steady-state fixed costs. Year 1: €258 (add legal amortization). Minimal fixed structure is the strategic advantage.</div>
+      </div>
+    </div>
+
+    <!-- Break-even chart -->
+    <div class="chart-box">
+      <div class="chart-title">Break-Even Waterfall — Monthly Net at Different User Counts</div>
+      <div class="chart-desc">Shows monthly profit/loss across Academy and Pro user scenarios. Fixed cost line at €237. Any positive bar = profitable month.</div>
+      <canvas id="breakEvenChart"></canvas>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 6: SENSITIVITY MATRIX ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">06 / SENSITIVITY MATRIX</div>
+        <h2>Break-Even Mixes — Academy vs. Pro Ratios</h2>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); margin-bottom:20px; font-size:13px;">Each cell shows <strong style="color:var(--text)">monthly Net Profit (€)</strong> for a given mix of Pro and Academy users. Green = profitable. Red = loss. Fixed costs = €237/month. Numbers assume Academy users average 1.5 closed deals/month (€58.05 CM) and Pro users contribute €294.80 CM each.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Academy Users ↓ / Pro Users →</th>
+            <th>0 Pro</th>
+            <th>1 Pro</th>
+            <th>2 Pro</th>
+            <th>3 Pro</th>
+            <th>5 Pro</th>
+            <th>10 Pro</th>
+            <th>20 Pro</th>
+          </tr>
+        </thead>
+        <tbody id="sensitivityBody">
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-accent" style="margin-top:16px;">
+      <strong>Reading the Matrix</strong>
+      The most important finding: with just 1 Pro user, VoltLibre is already profitable even with 0 Academy users. This means the platform should actively court its first Pro subscriber as the primary launch milestone — not wait for Academy user volume to cover costs. Academy-heavy scenarios (bottom rows) show healthy profitability as soon as 5–10 active closers are onboarded.
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 7: SCENARIOS ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">07 / SCENARIO ANALYSIS</div>
+        <h2>Academy-Heavy Growth Projections</h2>
+      </div>
+    </div>
+
+    <p style="color:var(--muted); margin-bottom:20px; font-size:13px;">Given VoltLibre's positioning as a free Academy platform, most early users will be Academy (non-paying) agents. The following scenarios model realistic heavy-Academy growth patterns.</p>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showScenario('s1')">80/20 Academy</button>
+      <button class="tab" onclick="showScenario('s2')">90/10 Academy</button>
+      <button class="tab" onclick="showScenario('s3')">95/5 Academy</button>
+      <button class="tab" onclick="showScenario('s4')">100% Academy</button>
+    </div>
+
+    <div id="s1" class="scenario-panel active">
+      <div class="card-grid card-grid-4" style="margin-bottom:16px;">
+        <div class="card"><div class="card-label">User Mix</div><div class="card-value" style="font-size:18px;">80% Acad / 20% Pro</div></div>
+        <div class="card card-accent"><div class="card-label">Break-Even Users</div><div class="card-value accent">4</div><div class="card-sub">3 Academy + 1 Pro</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 100 users</div><div class="card-value accent">€6,844</div><div class="card-sub">80 Acad + 20 Pro</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 300 users</div><div class="card-value accent">€22,194</div><div class="card-sub">240 Acad + 60 Pro</div></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">80% Academy / 20% Pro — Monthly Net Profit Projection</div>
+        <div class="chart-desc">Assumes Academy users close 1.5 deals/month average. Variable infrastructure costs included.</div>
+        <canvas id="chart_s1"></canvas>
+      </div>
+    </div>
+
+    <div id="s2" class="scenario-panel">
+      <div class="card-grid card-grid-4" style="margin-bottom:16px;">
+        <div class="card"><div class="card-label">User Mix</div><div class="card-value" style="font-size:18px;">90% Acad / 10% Pro</div></div>
+        <div class="card card-blue"><div class="card-label">Break-Even Users</div><div class="card-value blue">5</div><div class="card-sub">~4.5 Acad + 0.5 Pro → round up to 5</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 100 users</div><div class="card-value" style="color:var(--accent2)">€4,985</div><div class="card-sub">90 Acad + 10 Pro</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 300 users</div><div class="card-value" style="color:var(--accent2)">€15,681</div><div class="card-sub">270 Acad + 30 Pro</div></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">90% Academy / 10% Pro — Monthly Net Profit Projection</div>
+        <div class="chart-desc">Lower Pro ratio reduces predictable revenue. Academy deal volume becomes the critical metric to monitor.</div>
+        <canvas id="chart_s2"></canvas>
+      </div>
+    </div>
+
+    <div id="s3" class="scenario-panel">
+      <div class="card-grid card-grid-4" style="margin-bottom:16px;">
+        <div class="card"><div class="card-label">User Mix</div><div class="card-value" style="font-size:18px;">95% Acad / 5% Pro</div></div>
+        <div class="card card-amber"><div class="card-label">Break-Even Users</div><div class="card-value amber">5</div><div class="card-sub">~4.75 Acad + 0.25 Pro</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 100 users</div><div class="card-value amber">€4,058</div><div class="card-sub">95 Acad + 5 Pro</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 300 users</div><div class="card-value amber">€13,001</div><div class="card-sub">285 Acad + 15 Pro</div></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">95% Academy / 5% Pro — Monthly Net Profit Projection</div>
+        <div class="chart-desc">Highly Academy-heavy scenario. Profitable but increasingly dependent on Academy deal-close rates. One slow month by agents has outsized impact.</div>
+        <canvas id="chart_s3"></canvas>
+      </div>
+    </div>
+
+    <div id="s4" class="scenario-panel">
+      <div class="card-grid card-grid-4" style="margin-bottom:16px;">
+        <div class="card"><div class="card-label">User Mix</div><div class="card-value" style="font-size:18px;">100% Academy</div></div>
+        <div class="card card-danger"><div class="card-label">Break-Even Users</div><div class="card-value danger">5</div><div class="card-sub">@ 1.5 deals/month avg. 7 users if 1 deal/month avg.</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 100 users</div><div class="card-value" style="color:var(--accent);">€3,568</div><div class="card-sub">100 Acad, 0 Pro</div></div>
+        <div class="card"><div class="card-label">Monthly Net @ 300 users</div><div class="card-value" style="color:var(--accent);">€11,178</div><div class="card-sub">300 Acad, 0 Pro</div></div>
+      </div>
+      <div class="alert alert-danger">
+        <strong>⚠ 100% Academy — Key Risk</strong>
+        With zero Pro subscribers, ALL revenue depends on Academy agents closing deals. If average deals fall below 0.4/user/month, the platform operates at a loss even at 100 users. Revenue is entirely lumpy and commission-cycle dependent (providers pay 30–90 days after signing). Consider a minimum of 1–2 Pro users as a buffer at all times.
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">100% Academy — Monthly Net Profit Projection</div>
+        <div class="chart-desc">Most volatile scenario. Revenue entirely driven by agent deal-close performance. Fixed costs covered at 5 active closers.</div>
+        <canvas id="chart_s4"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 8: SCALE PROJECTIONS ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">08 / SCALABILITY</div>
+        <h2>Projections at 300, 1,000 & 5,000 Users</h2>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>300 Users</th>
+            <th>1,000 Users</th>
+            <th>5,000 Users</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="bold muted" colspan="4" style="background:var(--surface2); font-size:10px; letter-spacing:0.1em; text-transform:uppercase;">Assumed User Mix (80% Academy / 20% Pro)</td>
+          </tr>
+          <tr>
+            <td>Academy Users</td>
+            <td class="mono">240</td>
+            <td class="mono">800</td>
+            <td class="mono">4,000</td>
+          </tr>
+          <tr>
+            <td>Pro Users</td>
+            <td class="mono">60</td>
+            <td class="mono">200</td>
+            <td class="mono">1,000</td>
+          </tr>
+          <tr>
+            <td class="bold muted" colspan="4" style="background:var(--surface2); font-size:10px; letter-spacing:0.1em; text-transform:uppercase;">Revenue</td>
+          </tr>
+          <tr>
+            <td>Pro Subscription Revenue</td>
+            <td class="mono accent">€18,000</td>
+            <td class="mono accent">€60,000</td>
+            <td class="mono accent">€300,000</td>
+          </tr>
+          <tr>
+            <td>Academy Commission Revenue (avg. 1.5 deals × €39)</td>
+            <td class="mono" style="color:var(--accent2)">€14,040</td>
+            <td class="mono" style="color:var(--accent2)">€46,800</td>
+            <td class="mono" style="color:var(--accent2)">€234,000</td>
+          </tr>
+          <tr class="total-row">
+            <td class="bold">Total Monthly Revenue</td>
+            <td class="mono bold accent">€32,040</td>
+            <td class="mono bold accent">€106,800</td>
+            <td class="mono bold accent">€534,000</td>
+          </tr>
+          <tr>
+            <td class="bold muted" colspan="4" style="background:var(--surface2); font-size:10px; letter-spacing:0.1em; text-transform:uppercase;">Costs</td>
+          </tr>
+          <tr>
+            <td>Fixed Monthly Costs</td>
+            <td class="mono danger">−€237</td>
+            <td class="mono danger">−€237</td>
+            <td class="mono danger">−€237</td>
+          </tr>
+          <tr>
+            <td>Vercel Pro ($20)</td>
+            <td class="mono danger">−€19</td>
+            <td class="mono danger">−€19</td>
+            <td class="mono danger">−€19</td>
+          </tr>
+          <tr>
+            <td>Supabase Pro ($25)</td>
+            <td class="mono danger">−€23</td>
+            <td class="mono danger">−€23</td>
+            <td class="mono danger">−€23</td>
+          </tr>
+          <tr>
+            <td>Supabase Overages (storage, egress)</td>
+            <td class="mono danger">−€15</td>
+            <td class="mono danger">−€80</td>
+            <td class="mono danger">−€400</td>
+          </tr>
+          <tr>
+            <td>Stripe Fees (Pro subs: 1.5% + €0.25 per €300)</td>
+            <td class="mono danger">−€285</td>
+            <td class="mono danger">−€950</td>
+            <td class="mono danger">−€4,750</td>
+          </tr>
+          <tr>
+            <td>Transactional Email (Resend Pro)</td>
+            <td class="mono danger">−€19</td>
+            <td class="mono danger">−€19</td>
+            <td class="mono danger">−€60</td>
+          </tr>
+          <tr>
+            <td>Gestoría scale-up (more complex at 1K+ agents)</td>
+            <td class="mono danger">−€130</td>
+            <td class="mono danger">−€200</td>
+            <td class="mono danger">−€400</td>
+          </tr>
+          <tr class="total-row">
+            <td class="bold">Total Monthly Costs</td>
+            <td class="mono bold danger">−€728</td>
+            <td class="mono bold danger">−€1,528</td>
+            <td class="mono bold danger">−€5,889</td>
+          </tr>
+          <tr class="total-row">
+            <td class="bold">NET MONTHLY PROFIT</td>
+            <td class="mono bold" style="font-size:16px; color:var(--accent)">€31,312</td>
+            <td class="mono bold" style="font-size:16px; color:var(--accent)">€105,272</td>
+            <td class="mono bold" style="font-size:16px; color:var(--accent)">€528,111</td>
+          </tr>
+          <tr>
+            <td class="bold">Net Profit Margin</td>
+            <td class="mono bold amber">97.7%</td>
+            <td class="mono bold amber">98.6%</td>
+            <td class="mono bold amber">98.9%</td>
+          </tr>
+          <tr>
+            <td class="bold">Annual Revenue Run Rate</td>
+            <td class="mono">€384,480</td>
+            <td class="mono">€1,281,600</td>
+            <td class="mono">€6,408,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-box">
+      <div class="chart-title">Revenue vs. Cost at Scale (80% Academy / 20% Pro mix)</div>
+      <div class="chart-desc">Demonstrates near-zero marginal cost as users grow — the fundamental strength of the SaaS model on commodity infrastructure.</div>
+      <canvas id="scaleChart"></canvas>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 9: INFLECTION POINTS ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">09 / INFLECTION POINTS</div>
+        <h2>Where Costs Jump & Where Profit Accelerates</h2>
+      </div>
+    </div>
+
+    <div style="display:grid; gap:16px;">
+      <div class="inflection">
+        <div>
+          <div class="inflection-num">1<span>PRO USER</span></div>
+        </div>
+        <div>
+          <h3 style="color:var(--accent)">First Break-Even Point</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.7;">A single Pro subscriber at €300/month covers all €237 in fixed monthly costs with €57.80 remaining. This is the day-1 target. With even 1 Pro user, every Academy user added is pure upside with near-zero marginal cost. <strong style="color:var(--text)">Priority action: acquire the first Pro user before any other growth metric.</strong></p>
+        </div>
+      </div>
+
+      <div class="inflection">
+        <div>
+          <div class="inflection-num" style="color:var(--accent2);">~50<span>USERS</span></div>
+        </div>
+        <div>
+          <h3 style="color:var(--accent2)">Vercel Hobby → Pro ($20/mo)</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.7;">When the platform has 50+ registered users in production, upgrade Vercel to the Pro plan ($20/month ≈ €19). The Hobby tier has no SLA, can rate-limit deployments, and is not intended for commercial production. At €19/month, Vercel Pro provides unlimited projects, CI/CD pipelines, and 1TB bandwidth. <strong style="color:var(--text)">This upgrade should happen the moment the first real paying user signs up, not at the 50-user threshold.</strong></p>
+        </div>
+      </div>
+
+      <div class="inflection">
+        <div>
+          <div class="inflection-num" style="color:var(--accent3);">~200<span>USERS</span></div>
+        </div>
+        <div>
+          <h3 style="color:var(--accent3)">Supabase Free → Pro ($25/mo)</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.7;">The Supabase free tier supports 50,000 MAUs and 500MB database — but the critical risk is the <strong style="color:var(--text)">project pause on inactivity</strong>. Any 7-day period without usage will cause a production outage. At ~200 active users generating daily traffic this risk is mitigated, but best practice is to move to Supabase Pro ($25/month ≈ €23) when the first paying user exists. The Pro tier also provides daily automated backups — critical for a financial platform handling agent earnings and invoice data.</p>
+        </div>
+      </div>
+
+      <div class="inflection">
+        <div>
+          <div class="inflection-num" style="color:var(--danger);">~1K<span>USERS</span></div>
+        </div>
+        <div>
+          <h3 style="color:var(--danger)">Gestoría Complexity Threshold</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.7;">At ~1,000 Academy users, the Spanish gestoría is managing potentially 1,500+ commission payouts per month across multiple energy providers with varying payment terms. A basic online gestoría (€130/mo) may no longer be sufficient. Budget for an upgrade to a dedicated accounting firm (€200–€400/month) that specializes in digital platforms and multi-party payout reconciliation. This is the <strong style="color:var(--text)">only significant operational cost inflection point</strong> in the model.</p>
+        </div>
+      </div>
+
+      <div class="inflection">
+        <div>
+          <div class="inflection-num" style="color:var(--accent);">5K<span>USERS</span></div>
+        </div>
+        <div>
+          <h3 style="color:var(--accent)">The True Scalability Proof Point</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.7;">At 5,000 users (80/20 mix), monthly revenue is €534,000 with total costs of only €5,889. The cost-to-revenue ratio is 1.1%. This is the defining characteristic of a well-architected SaaS platform: revenue scales linearly with users, while costs scale logarithmically. <strong style="color:var(--text)">At 5,000 users, every additional user generates ~€107/month in net profit contribution with under €1 in marginal cost.</strong></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 10: TAX IMPLICATIONS ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">10 / TAX IMPLICATIONS</div>
+        <h2>Wyoming LLC + Spanish Operations Structure</h2>
+      </div>
+    </div>
+
+    <div class="alert alert-danger">
+      <strong>⚠ Critical Legal Disclaimer</strong>
+      The following is a high-level financial modeling summary, not legal or tax advice. Cross-border taxation for a US LLC with Spanish operations, Spanish-resident users, and Spanish energy provider revenue streams is complex. Engage both a US CPA (Form 5472 specialist) and a Spanish gestoría with international experience before making any structural decisions.
+    </div>
+
+    <div class="card-grid card-grid-2" style="margin-top:20px;">
+      <div class="card">
+        <h3>🇺🇸 US Tax Obligations</h3>
+        <div class="assumption-row">
+          <span class="assumption-label">Entity Structure</span>
+          <span class="assumption-value">Wyoming LLC (Disregarded Entity)</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Federal Income Tax (non-resident owner)</span>
+          <span class="assumption-value">0% on non-US-source income</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Form 5472 + Pro-Forma 1120</span>
+          <span class="assumption-value">Required annually. $25,000 penalty/violation.</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Annual CPA cost</span>
+          <span class="assumption-value">~$600–$750 / year (€550–€690)</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Wyoming state tax</span>
+          <span class="assumption-value">$0 — no state income tax</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Wyoming Annual Report</span>
+          <span class="assumption-value">$62/year</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Beneficial Ownership Report (FinCEN)</span>
+          <span class="assumption-value">Required since Jan 2024. One-time filing.</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🇪🇸 Spanish Tax Obligations</h3>
+        <div class="assumption-row">
+          <span class="assumption-label">IVA (VAT) on Pro subscriptions</span>
+          <span class="assumption-value">21% — collected from Pro users</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">IVA on provider CPA commissions</span>
+          <span class="assumption-value">21% — VoltLibre invoices providers</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">IRPF withholding on Academy payouts</span>
+          <span class="assumption-value">15% (new autónomos) / 7% (first 2 yrs)</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Quarterly filings</span>
+          <span class="assumption-value">Modelo 303 (IVA) + 111/115 (IRPF)</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Spanish Permanent Establishment risk</span>
+          <span class="assumption-value">⚠ HIGH — operational nexus in Spain. Seek legal advice.</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Effective tax rate on net income</span>
+          <span class="assumption-value">Depends on owner's country of residence</span>
+        </div>
+        <div class="assumption-row">
+          <span class="assumption-label">Double taxation treaty (Spain–USA)</span>
+          <span class="assumption-value">Treaty exists; reduces withholding. Review with gestor.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-amber" style="margin-top:16px;">
+      <strong>🏦 Permanent Establishment (PE) Risk — Most Important Tax Issue</strong>
+      VoltLibre is a Wyoming LLC but its users, customers, and revenue sources are all in Spain. Spanish tax authorities (AEAT) may assert that VoltLibre has a "permanent establishment" in Spain, which would subject its Spanish-source income to Spanish Corporation Tax (25%). This risk is material. The mitigation strategies — ensuring the LLC has no employees in Spain, that all operations are digital and the owner is not physically present conducting business in Spain — should be reviewed with a tax lawyer experienced in US–Spain structures before the platform generates significant revenue. Budget for a one-time legal opinion: €800–€2,000.
+    </div>
+
+    <div class="card-grid card-grid-3" style="margin-top:20px;">
+      <div class="card card-amber">
+        <div class="card-label">Effective Tax Burden Estimate</div>
+        <div class="card-value amber">15–25%</div>
+        <div class="card-sub">Range depending on PE determination, owner's residence country, and IVA pass-through treatment.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Net Profit After Est. Tax @ 300 users</div>
+        <div class="card-value" style="color:var(--accent2)">€23,484</div>
+        <div class="card-sub">Based on €31,312 pre-tax × (1 − 25% effective rate)</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Net Profit After Est. Tax @ 1,000 users</div>
+        <div class="card-value" style="color:var(--accent2)">€78,954</div>
+        <div class="card-sub">Based on €105,272 pre-tax × (1 − 25%)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════ SECTION 11: SUMMARY ══════════════════════════════ -->
+  <section class="section">
+    <div class="section-header">
+      <div>
+        <div class="section-num">11 / EXECUTIVE SUMMARY</div>
+        <h2>Key Findings & Strategic Recommendations</h2>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-2">
+      <div>
+        <div class="card card-accent" style="margin-bottom:16px;">
+          <div class="card-label">Monthly Fixed Burn (Steady State)</div>
+          <div class="card-value accent">€237</div>
+          <div class="card-sub">One of the lowest-overhead SaaS structures achievable. The model is extremely lean by design.</div>
+        </div>
+        <div class="card card-accent" style="margin-bottom:16px;">
+          <div class="card-label">Break-Even</div>
+          <div class="card-value accent">1 Pro</div>
+          <div class="card-sub">or 5 active Academy agents. Fastest path to break-even in the industry for a commission-based SaaS.</div>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-label">CM per Pro User</div>
+          <div class="card-value" style="color:var(--accent2)">€294.80</div>
+          <div class="card-sub">98.3% margin. Every Pro subscription is almost entirely profit after the minimal per-user variable costs.</div>
+        </div>
+        <div class="card">
+          <div class="card-label">CM per Academy User (avg)</div>
+          <div class="card-value" style="color:var(--accent2)">€58.05</div>
+          <div class="card-sub">At 1.5 deals/month. Floor of €0 if no deals closed. Ceiling unbounded for high-volume closers.</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:28px;">
+        <h3>Strategic Recommendations</h3>
+
+        <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:20px;">
+          <div style="background:var(--accent); color:var(--bg); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; margin-top:2px;">1</div>
+          <div>
+            <div style="font-weight:600; margin-bottom:4px; font-size:13px;">Close 1 Pro user as Launch Day milestone</div>
+            <div style="font-size:12px; color:var(--muted);">This single event makes the platform profitable regardless of Academy deal flow. Target an energy broker or a highly motivated closer who wants 100% commission.</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:20px;">
+          <div style="background:var(--accent2); color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; margin-top:2px;">2</div>
+          <div>
+            <div style="font-weight:600; margin-bottom:4px; font-size:13px;">Track Academy "active closer" rate obsessively</div>
+            <div style="font-size:12px; color:var(--muted);">Not all Academy signups close deals. The model only works if 40–60% of registered Academy users are active (closing ≥1 deal/month). Build retention and deal-coaching into the Academy experience.</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:20px;">
+          <div style="background:var(--accent3); color:var(--bg); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; margin-top:2px;">3</div>
+          <div>
+            <div style="font-weight:600; margin-bottom:4px; font-size:13px;">Upgrade infrastructure immediately on first paying user</div>
+            <div style="font-size:12px; color:var(--muted);">Move to Vercel Pro ($20) and Supabase Pro ($25) on day one of having a paying Pro subscriber. Total cost: €43/month. The free tiers are not production-safe for financial data.</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:20px;">
+          <div style="background:var(--danger); color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; margin-top:2px;">4</div>
+          <div>
+            <div style="font-weight:600; margin-bottom:4px; font-size:13px;">Get a tax lawyer opinion on Permanent Establishment before launch</div>
+            <div style="font-size:12px; color:var(--muted);">The Wyoming LLC + Spain operations structure is efficient but carries PE risk. One €1,500 legal opinion now prevents a potential 25% Spanish corporation tax liability later.</div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="background:var(--muted); color:var(--bg); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; margin-top:2px;">5</div>
+          <div>
+            <div style="font-weight:600; margin-bottom:4px; font-size:13px;">File Form 5472 + Pro-Forma 1120 from Year 1</div>
+            <div style="font-size:12px; color:var(--muted);">The $25,000 IRS penalty per missed form is not negotiable. Budget €54/month for the US CPA from day one. This is the cheapest insurance on the books.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// Chart defaults
+Chart.defaults.color = '#6b7fa3';
+Chart.defaults.borderColor = '#1e2740';
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
+
+const ACCENT = '#00e5a0';
+const BLUE = '#3b82f6';
+const AMBER = '#f59e0b';
+const DANGER = '#ef4444';
+const MUTED = '#1e2740';
+
+function makeGradient(ctx, color) {
+  const g = ctx.createLinearGradient(0, 0, 0, 300);
+  g.addColorStop(0, color + '55');
+  g.addColorStop(1, color + '05');
+  return g;
+}
+
+// ── CM Chart ──────────────────────────────────────────
+const cmCtx = document.getElementById('cmChart').getContext('2d');
+new Chart(cmCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Pro User', 'Academy User (avg 1.5 deals)', 'Academy User (1 deal)', 'Academy User (0 deals)'],
+    datasets: [{
+      label: 'Monthly Contribution Margin (€)',
+      data: [294.80, 58.05, 38.55, 0],
+      backgroundColor: [ACCENT + 'aa', BLUE + 'aa', AMBER + 'aa', DANGER + 'aa'],
+      borderColor: [ACCENT, BLUE, AMBER, DANGER],
+      borderWidth: 1.5,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => ` €${ctx.parsed.y.toFixed(2)} / month` }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => '€' + v },
+        grid: { color: '#1e274033' }
+      },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// ── Break-Even Chart ──────────────────────────────────
+const beCtx = document.getElementById('breakEvenChart').getContext('2d');
+const FIXED = 237;
+const labels_be = ['0A+0P','2A+0P','5A+0P','5A+1P','10A+1P','10A+3P','20A+5P','30A+10P'];
+const data_be = [
+  -FIXED,
+  2*58.05 - FIXED,
+  5*58.05 - FIXED,
+  5*58.05 + 1*294.80 - FIXED,
+  10*58.05 + 1*294.80 - FIXED,
+  10*58.05 + 3*294.80 - FIXED,
+  20*58.05 + 5*294.80 - FIXED,
+  30*58.05 + 10*294.80 - FIXED,
+];
+
+new Chart(beCtx, {
+  type: 'bar',
+  data: {
+    labels: labels_be,
+    datasets: [{
+      label: 'Monthly Net (€)',
+      data: data_be,
+      backgroundColor: data_be.map(v => v >= 0 ? ACCENT + 'bb' : DANGER + 'bb'),
+      borderColor: data_be.map(v => v >= 0 ? ACCENT : DANGER),
+      borderWidth: 1.5,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => ` €${ctx.parsed.y.toFixed(0)} net profit` }
+      }
+    },
+    scales: {
+      y: { ticks: { callback: v => '€' + v }, grid: { color: '#1e274033' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// ── Sensitivity Matrix ─────────────────────────────────
+const proUsers = [0,1,2,3,5,10,20];
+const academyUsers = [0,2,5,10,20,30,50,80,100];
+const body = document.getElementById('sensitivityBody');
+academyUsers.forEach(a => {
+  const tr = document.createElement('tr');
+  let cells = `<td class="bold">${a} Academy</td>`;
+  proUsers.forEach(p => {
+    const net = a*58.05 + p*294.80 - 237;
+    const rounded = Math.round(net);
+    let cls = '';
+    if (net > 500) cls = 'green-light';
+    else if (net > 0) cls = 'amber-light';
+    else cls = 'red-light';
+    cells += `<td class="mono right ${cls}">€${rounded.toLocaleString()}</td>`;
+  });
+  tr.innerHTML = cells;
+  body.appendChild(tr);
+});
+
+// ── Scenario Charts ───────────────────────────────────
+function makeScenarioChart(id, acadPct, proPct, color) {
+  const ctx = document.getElementById(id).getContext('2d');
+  const userCounts = [5,10,20,30,50,75,100,150,200,300];
+  const revenue = userCounts.map(n => {
+    const acad = Math.round(n * acadPct);
+    const pro = Math.round(n * proPct);
+    return acad * 58.05 + pro * 294.80;
+  });
+  const costs = userCounts.map(n => {
+    let c = 237;
+    if (n >= 50) c += 19 + 23; // Vercel + Supabase Pro
+    if (n >= 50) c += Math.round(n * proPct) * 4.75; // Stripe
+    if (n >= 100) c += 19; // Resend
+    return c;
+  });
+  const net = revenue.map((r,i) => r - costs[i]);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: userCounts,
+      datasets: [
+        {
+          label: 'Revenue (€/mo)',
+          data: revenue,
+          borderColor: color,
+          backgroundColor: color + '15',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: color,
+        },
+        {
+          label: 'Total Costs (€/mo)',
+          data: costs,
+          borderColor: DANGER,
+          backgroundColor: DANGER + '10',
+          fill: true,
+          tension: 0.4,
+          borderDash: [6,3],
+          pointRadius: 3,
+          pointBackgroundColor: DANGER,
+        },
+        {
+          label: 'Net Profit (€/mo)',
+          data: net,
+          borderColor: ACCENT,
+          backgroundColor: 'transparent',
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: ACCENT,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        tooltip: {
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: €${Math.round(ctx.parsed.y).toLocaleString()}` }
+        }
+      },
+      scales: {
+        y: { ticks: { callback: v => '€' + v.toLocaleString() }, grid: { color: '#1e274033' } },
+        x: { title: { display: true, text: 'Total Users', color: '#6b7fa3' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+makeScenarioChart('chart_s1', 0.80, 0.20, BLUE);
+makeScenarioChart('chart_s2', 0.90, 0.10, AMBER);
+makeScenarioChart('chart_s3', 0.95, 0.05, '#e879f9');
+makeScenarioChart('chart_s4', 1.00, 0.00, DANGER);
+
+// ── Scale Chart ─────────────────────────────────────
+const scaleCtx = document.getElementById('scaleChart').getContext('2d');
+const scaleLabels = ['50','100','200','300','500','750','1,000','2,000','3,000','5,000'];
+const scaleRevenue = [50,100,200,300,500,750,1000,2000,3000,5000].map(n => {
+  return Math.round(n * 0.80 * 58.05 + n * 0.20 * 294.80);
+});
+const scaleCosts = [50,100,200,300,500,750,1000,2000,3000,5000].map(n => {
+  let c = 237 + 19 + 23; // fixed + Vercel + Supabase
+  c += Math.round(n * 0.20) * 4.75; // Stripe
+  c += 19; // Resend
+  if (n >= 1000) c += 70; // gestoría complexity
+  if (n >= 2000) c += 150; // overages
+  if (n >= 5000) c += 250; // more overages
+  return Math.round(c);
+});
+
+new Chart(scaleCtx, {
+  type: 'line',
+  data: {
+    labels: scaleLabels,
+    datasets: [
+      {
+        label: 'Monthly Revenue (€)',
+        data: scaleRevenue,
+        borderColor: ACCENT,
+        backgroundColor: ACCENT + '15',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: ACCENT,
+      },
+      {
+        label: 'Monthly Total Costs (€)',
+        data: scaleCosts,
+        borderColor: DANGER,
+        backgroundColor: DANGER + '10',
+        fill: true,
+        tension: 0.3,
+        borderDash: [6,3],
+        pointRadius: 4,
+        pointBackgroundColor: DANGER,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: €${ctx.parsed.y.toLocaleString()}` }
+      }
+    },
+    scales: {
+      y: {
+        type: 'logarithmic',
+        ticks: { callback: v => '€' + Number(v).toLocaleString() },
+        grid: { color: '#1e274033' }
+      },
+      x: { title: { display: true, text: 'Total Users', color: '#6b7fa3' }, grid: { display: false } }
+    }
+  }
+});
+
+// Scenario tab switching
+function showScenario(id) {
+  document.querySelectorAll('.scenario-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
